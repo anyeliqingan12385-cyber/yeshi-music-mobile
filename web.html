@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1b1b1f" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <title>叶诗音乐 · 网页版</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <h1>叶诗音乐</h1>
+        <label class="pick-btn">
+          选择音乐文件夹
+          <input id="picker" type="file" webkitdirectory directory multiple hidden />
+        </label>
+      </header>
+      <div id="hint" class="hint">点「选择音乐文件夹」挑一个本地音乐目录，即可在本页播放（支持 ncm / flac / mp3 / m4a / ogg / wav 及 QQ 加密格式）。</div>
+      <div id="list" class="track-list"></div>
+      <section id="player" class="player" hidden>
+        <div id="npTitle" class="np-title">—</div>
+        <div id="npSub" class="np-sub"></div>
+        <div class="np-ctl">
+          <button id="btnPlay">播放/暂停</button>
+        </div>
+        <div id="lyric" class="lyric"></div>
+      </section>
+    </div>
+    <script type="module" src="./web/main.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('./sw.js').catch(function () {});
+        });
+      }
+    </script>
+  </body>
+</html>

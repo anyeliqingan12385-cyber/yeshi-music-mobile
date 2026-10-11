@@ -1,0 +1,15 @@
+# 依赖（由 npm install 生成，CI 会重新安装）
+node_modules/
+
+# 原生壳（由 cap add 生成，CI 会重新生成）
+android/
+ios/
+
+# 构建产物（由 vite build 生成）
+dist/
+
+# 系统/编辑器
+.DS_Store
+*.log
+.idea/
+.vscode/

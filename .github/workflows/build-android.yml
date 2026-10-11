@@ -1,0 +1,54 @@
+name: Build Android APK (叶诗音乐)
+
+on:
+  workflow_dispatch:        # 手动触发：Actions 页面点 "Run workflow"
+  push:
+    tags: ['v*']            # 打 tag 自动出包
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # 约定：把 mobile/ 作为独立仓库根（即 .github/workflows/ 就在仓库根）。
+    # 若 mobile/ 是更大仓库的子目录，请把本文件移到仓库根 .github/workflows/ 并自行加回 working-directory: mobile。
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+
+      - name: Install npm deps
+        run: npm install
+
+      - name: Build web assets (vite -> dist)
+        run: npm run build
+
+      - name: Clean stale native shell (if any)
+        run: rm -rf android ios
+
+      - name: Add Android shell & sync web assets
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yeshi-music-android
+          path: android/app/build/outputs/apk/debug/app-debug.apk
