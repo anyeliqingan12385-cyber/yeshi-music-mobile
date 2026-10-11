@@ -3,7 +3,7 @@
   "short_name": "叶诗音乐",
   "description": "本地音乐播放器：扫描手机音乐、解密网易云/QQ 加密格式并播放",
   "lang": "zh-CN",
-  "start_url": "./",
+  "start_url": "./web.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

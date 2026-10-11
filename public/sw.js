@@ -1,7 +1,9 @@
 /* 极简 Service Worker：缓存 App 壳，使网页版可「添加到主屏幕」当作安装的应用使用。
  * 仅缓存静态资源；音频文件由用户从本地文件夹选取，不进缓存。 */
 const CACHE = 'yeshi-web-v1';
-const SHELL = ['./', './web/main.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+// 仅缓存稳定存在的壳资源；构建后被哈希改名的 JS/CSS 由 fetch 回源时按需缓存。
+// 注意：不能写 './web/main.js' 这类构建后不复存在的路径，否则 cache.addAll 抛错导致 SW 永不激活。
+const SHELL = ['./', './index.html', './web.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

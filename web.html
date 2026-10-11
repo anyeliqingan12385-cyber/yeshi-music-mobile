@@ -17,7 +17,7 @@
           <input id="picker" type="file" webkitdirectory directory multiple hidden />
         </label>
       </header>
-      <div id="hint" class="hint">点「选择音乐文件夹」挑一个本地音乐目录，即可在本页播放（支持 ncm / flac / mp3 / m4a / ogg / wav 及 QQ 加密格式）。</div>
+      <div id="hint" class="hint">点「选择音乐文件夹」挑一个本地音乐目录，即可在本页播放（支持 ncm / flac / mp3 / m4a / ogg / wav 及 QQ 加密格式）。<br>安卓可直接选整个文件夹；iPhone（Safari 不支持整文件夹选择）请在文件 App 里多选歌曲后分享到本页。</div>
       <div id="list" class="track-list"></div>
       <section id="player" class="player" hidden>
         <div id="npTitle" class="np-title">—</div>
@@ -28,7 +28,7 @@
         <div id="lyric" class="lyric"></div>
       </section>
     </div>
-    <script type="module" src="./web/main.js"></script>
+    <script type="module" src="/src/web/main.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {

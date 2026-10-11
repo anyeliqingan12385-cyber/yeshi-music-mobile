@@ -5,9 +5,9 @@
  * decryptFile() 是纯逻辑（不碰浏览器 API），可在 Node 下被 selfcheck 验证；
  * decryptedToObjectURL() 依赖 Blob/URL，仅在浏览器侧调用。
  */
-import NcmDecrypt from '../../../core/ncmdecrypt.js';
-import QQDecrypt from '../../../core/qqdecrypt.js';
-import MetadataBrowser from '../../../core/metadata_browser.js';
+import NcmDecrypt from './decoders/ncmdecrypt.js';
+import QQDecrypt from './decoders/qqdecrypt.js';
+import MetadataBrowser from './decoders/metadata_browser.js';
 const { analyzeBytes } = MetadataBrowser;
 
 function getNcm() { return NcmDecrypt || (typeof window !== 'undefined' && window.NcmDecrypt); }

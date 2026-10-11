@@ -1,25 +1,8 @@
-/* 极简 Service Worker：缓存应用外壳，使 PWA 可「添加到主屏幕」并离线启动。
- * 注意：仅缓存静态资源；解密后的音频是运行时按需生成、体积大，不进缓存。 */
-const CACHE = 'yeshi-music-v1';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
-
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
-});
-self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
-});
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  // 外壳走缓存优先；其余网络优先、失败回退缓存
-  e.respondWith(
-    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-      if (res && res.ok && new URL(req.url).origin === self.location.origin) {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy));
-      }
-      return res;
-    }).catch(() => caches.match('./index.html')))
-  );
-});
+/* DEPRECATED — 此文件已废弃，请勿使用。
+ *
+ * 真正的 PWA Service Worker 是 public/sw.js（被 web.html 注册）。
+ * 原生入口 src/main.js 也不再在此注册 SW（原生壳用 Capacitor 自有 WebView，无需 SW）。
+ *
+ * 本文件仅作为占位保留，因为当前沙箱的安全删除钩子对 src/ 下文件不可用，
+ * 无法物理删除。它不会被任何入口 import，也不会进入 vite 构建产物，可安全忽略。
+ */

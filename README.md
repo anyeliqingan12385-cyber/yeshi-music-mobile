@@ -28,17 +28,18 @@ mobile/
 ├── index.html            # 原生端入口（Capacitor 壳加载）
 ├── web.html              # 网页版入口（浏览器/直接部署，无需原生壳）
 ├── src/
-│   ├── main.js           # 原生端入口（含 PWA Service Worker 注册）
+│   ├── main.js           # 原生端入口（检测运行环境：无 Capacitor 时自动跳转到网页版 web.html）
 │   ├── app.js            # 原生端 UI 编排：扫描→列表→点击解密播放→歌词同步→去重标注
 │   ├── web/main.js       # 网页版 UI 编排：选文件夹→解密→播放→歌词→去重（复用同一批核心）
 │   ├── style.css         # 响应式样式（含 safe-area）
-│   ├── service-worker.js # 原生端 PWA 外壳缓存
+│   ├── service-worker.js # ⚠️ 已废弃（逻辑迁至 public/sw.js），仅占位文件，不被任何入口引用
 │   ├── core/
 │   │   ├── decrypt-bridge.js  # 统一解密入口（路由 ncm/qq/普通），透传 ncm 内嵌歌词 + 标签元数据
 │   │   ├── lyric-bridge.js    # 歌词引擎移动端封装（内嵌歌词登记 + 同名 .lrc）
 │   │   ├── identity-bridge.js # 曲库语义去重纯函数（标题|歌手|专辑 三键归一 + 重复组/推荐保留）
 │   │   ├── scan.js            # Capacitor Filesystem 扫描与读文件
-│   │   └── player.js          # HTMLAudioElement 封装，喂 Blob URL
+│   │   ├── player.js          # HTMLAudioElement 封装，喂 Blob URL
+│   │   └── decoders/         # 从桌面端 vendor 的纯 JS 解密/歌词核心（ncmdecrypt/qqdecrypt/metadata_browser/lyricengine/lyrics/aes128_ecb，CJS；自带 package.json 标 commonjs），使 mobile 仓库自包含、可独立 CI 出包
 │   └── tools/
 │       ├── selfcheck.js       # Node 静态自检（解密 + 歌词 + 浏览器版 metadata + 去重闭环验证）
 │       ├── integration-test.js# Node 端到端闭环（扫描→解密→播放URL→歌词→去重，含 Capacitor mock）

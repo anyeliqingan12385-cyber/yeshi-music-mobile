@@ -8,12 +8,12 @@
  * 退出码 0=全绿，1=任一失败。Web UI / 原生壳的真机验证需用户在设备上跑（本机环境限制）。
  */
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
-import NcmDecrypt from '../../../core/ncmdecrypt.js';
-import QQDecrypt from '../../../core/qqdecrypt.js';
+import NcmDecrypt from '../core/decoders/ncmdecrypt.js';
+import QQDecrypt from '../core/decoders/qqdecrypt.js';
 import { decryptFile as bridgeDecrypt } from '../core/decrypt-bridge.js';
 import { createMobileLyricEngine, memoryFsx, getLyric, parse, at } from '../core/lyric-bridge.js';
 import { annotateDuplicates, duplicateGroups } from '../core/identity-bridge.js';
-import MetadataBrowser from '../../../core/metadata_browser.js';
+import MetadataBrowser from '../core/decoders/metadata_browser.js';
 const { analyzeBytes } = MetadataBrowser;
 
 let ok = true;

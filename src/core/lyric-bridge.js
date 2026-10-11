@@ -10,8 +10,8 @@
  * 双环境兼容：core 是 CJS，浏览器/Node 用默认导入即可（Node 经 cjs-module-lexer 取默认导出）。
  * 注意：require 这些 CJS 文件的活由 Vite/Node 的 CJS 互操作负责，本文件只做默认导入。
  */
-import LyricEngineMod from '../../../core/lyricengine.js';
-import LMod from '../../../core/lyrics.js';
+import LyricEngineMod from './decoders/lyricengine.js';
+import LMod from './decoders/lyrics.js';
 
 const { LyricEngine, SOURCES, SOURCE_ORDER } = LyricEngineMod;
 const { parse, at } = LMod;
