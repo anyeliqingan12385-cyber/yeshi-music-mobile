@@ -73,9 +73,10 @@ npx cap open ios      # Xcode 里选真机/模拟器 Run
 
 ## 已验证
 
-本机三件套 Node 自检全绿（共 **58 项**）：
+本机三件套 Node 自检全绿（共 **61 项**）：
 
-- `npm run selfcheck` —— **25 项**：解密（ncm/qq）、歌词引擎、浏览器版 metadata 标签解析与透传、语义去重闭环。
+- `npm run selfcheck` —— **28 项**：解密（ncm/qq）、歌词引擎、浏览器版 metadata 标签解析与透传、语义去重闭环，**以及「仓库自包含」护栏**（vendored 解密核心齐全 + `decoders/package.json` 为 commonjs + src 下无逃出 mobile 目录的 import，防止 CI 构建失败回归）。
+- `npm run sync-decoders` —— 从桌面端 `core/` 重新同步 vendored 的解密/歌词核心（上游不存在时安全跳过）。桌面端算法更新后跑它，再跑 selfcheck 确认无漂移后提交。
 - `npm run integration-test` —— **19 项**：用内存版 Capacitor + MockAudio 在 Node 真实跑通「扫描→解密→播放URL→歌词→去重」端到端整链路。
 - `npm run web-smoke` —— **14 项**：复用与网页版 `src/web/main.js` 完全相同的核心，证明**网页形态**下「解密→播放URL→歌词→去重」同样可闭环。
 

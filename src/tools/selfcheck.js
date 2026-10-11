@@ -8,6 +8,9 @@
  * 退出码 0=全绿，1=任一失败。Web UI / 原生壳的真机验证需用户在设备上跑（本机环境限制）。
  */
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import NcmDecrypt from '../core/decoders/ncmdecrypt.js';
 import QQDecrypt from '../core/decoders/qqdecrypt.js';
 import { decryptFile as bridgeDecrypt } from '../core/decrypt-bridge.js';
@@ -189,6 +192,47 @@ function buildMp3Bytes() {
   check('identity: 推荐保留版本为 flac(音质最高)', !!(keep && keep.format === 'flac'));
   check('identity: 标记 2 个重复项(mp3/ncm)', dups.length === 2);
   check('identity: 唯一歌B 不被错标为重复/保留', annotated[3]._dup !== true && annotated[3]._dupKeep !== true);
+}
+
+// ---- 8) 仓库自包含护栏（防回归）----
+// 背景：早期用 '../../../core/...' 逃逸 import 到桌面端 core，本机测试因桌面项目在旁而通过，
+// 但 mobile 作为独立仓库推 CI 后该路径不存在 → npm run build 失败 → 永远出不了 APK。
+// 这里做硬护栏：vendored 核心必须齐全，且 src 下任何相对 import 都不得解析到 mobile 目录之外。
+{
+  const here = path.dirname(fileURLToPath(import.meta.url)); // src/tools
+  const repoRoot = path.resolve(here, '..', '..');           // mobile/
+  const decDir = path.join(repoRoot, 'src', 'core', 'decoders');
+  const REQUIRED = ['ncmdecrypt.js', 'qqdecrypt.js', 'metadata_browser.js', 'aes128_ecb.js', 'lyricengine.js', 'lyrics.js', 'package.json'];
+  const missing = REQUIRED.filter((f) => !fs.existsSync(path.join(decDir, f)));
+  check('自包含: decoders 解密/歌词核心齐全' + (missing.length ? '(缺:' + missing.join(',') + ')' : ''), missing.length === 0);
+
+  let pkgType = null;
+  try { pkgType = JSON.parse(fs.readFileSync(path.join(decDir, 'package.json'), 'utf8')).type; } catch (e) { /* 读不到则由上一条已报缺 */ }
+  check('自包含: decoders/package.json 标记 commonjs', pkgType === 'commonjs');
+
+  const jsFiles = [];
+  (function walk(dir) {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) { if (ent.name !== 'node_modules') walk(p); }
+      else if (p.endsWith('.js')) jsFiles.push(p);
+    }
+  })(path.join(repoRoot, 'src'));
+
+  const escaped = [];
+  const re = /(?:from|require\()\s*['"]([^'"]+)['"]/g;
+  for (const p of jsFiles) {
+    const code = fs.readFileSync(p, 'utf8');
+    let m;
+    while ((m = re.exec(code))) {
+      const spec = m[1];
+      if (!spec.startsWith('.')) continue;               // 裸包名（node_modules）跳过
+      const resolved = path.resolve(path.dirname(p), spec);
+      const inside = resolved === repoRoot || resolved.startsWith(repoRoot + path.sep);
+      if (!inside) { escaped.push(path.relative(repoRoot, p) + ' -> ' + spec); break; }
+    }
+  }
+  check('自包含: src 下无逃出 mobile 目录的 import' + (escaped.length ? '(' + escaped.join('; ') + ')' : ''), escaped.length === 0);
 }
 
 console.log(ok ? '\n✅ mobile 静态自检全部通过' : '\n❌ mobile 静态自检存在失败项');

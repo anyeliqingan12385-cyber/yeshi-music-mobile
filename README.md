@@ -52,6 +52,7 @@ mobile/
 │   └── icons/                 # PWA 图标（由 scripts/gen-icons.mjs 生成）
 ├── scripts/
 │   ├── gen-icons.mjs          # 生成 PWA 图标（零依赖）
+│   ├── sync-decoders.mjs      # 从桌面端 core 重新同步 vendor 的解密/歌词核心（防 vendor 漂移；上游不存在时安全跳过）
 │   ├── build-apk.sh / .bat    # 本地一键构建 Android APK
 ├── .github/workflows/build-android.yml  # CI 自动出包（APK artifact）
 └── (android/ ios/ 由 `npx cap add` 生成，不手写)
@@ -59,9 +60,9 @@ mobile/
 
 ## 已验证（本机可闭环）
 
-三件套自检全部通过（共 **58 项**）：
+三件套自检全部通过（共 **61 项**）：
 
-- `node src/tools/selfcheck.js` —— **25 项全绿**（解密 ncm/qq、歌词引擎、浏览器版 metadata、语义去重闭环），证明手机端复用的核心正确。
+- `node src/tools/selfcheck.js` —— **28 项全绿**（解密 ncm/qq、歌词引擎、浏览器版 metadata、语义去重闭环），证明手机端复用的核心正确。**含「仓库自包含」护栏**：校验 vendored 解密核心齐全、`decoders/package.json` 为 commonjs、且 src 下无任何逃出 mobile 目录的 import（已注入假逃逸 import 反证该护栏确实会报错）。
 - `node --experimental-loader ./mock-loader.mjs integration-test.js` —— **19 项全绿**，用内存版 Capacitor Filesystem + MockAudio 在 Node 真实跑通**端到端**链路：扫描过滤 `.lrc` → 读字节 → 解密 → 播放器生成可播放 URL → 歌词引擎（同名 `.lrc` 优先级高于内嵌、flac 标签歌词按时间轴取行、mp3 USLT 命中）→ 语义去重识别重复组并保留音质最高版本。无需真机即可验证「能不能闭环」。
 - `node src/tools/web-smoke.js` —— **14 项全绿**，复用**与网页版 `src/web/main.js` 完全相同**的核心模块（decrypt-bridge/player/lyric-bridge/identity-bridge），用 MockAudio + URL 替身证明**网页形态**下「解密→播放 URL→歌词→去重」同样能闭环（即网页版 App 的核心逻辑正确，上手机浏览器即可用）。
 
@@ -85,9 +86,9 @@ mobile/
 4. 真机/模拟器 build 出 APK/IPA
 5. 真机点击、真机解密验证（同桌面端 GUI 同源限制）
 
-> 已在本沙箱**实测确认**：核心逻辑（解密/歌词/去重）全部通过 58 项 Node 自检；但 `dist/` 二进制产物与 APK 无法在此产出。网页版与原生端**源码均完整**，且网页端核心管线已用 `web-smoke` 证明可闭环——你只需在能 `npm install` 的机器（或推送 GitHub 走 CI）即可一键出包。
+> 已在本沙箱**实测确认**：核心逻辑（解密/歌词/去重）全部通过 61 项 Node 自检；但 `dist/` 二进制产物与 APK 无法在此产出。网页版与原生端**源码均完整**，且网页端核心管线已用 `web-smoke` 证明可闭环——你只需在能 `npm install` 的机器（或推送 GitHub 走 CI）即可一键出包。
 
-因此本工程交付的是**完整、可审查、核心逻辑已通过 58 项 Node 自检验证（含原生端 + 网页端双形态闭环）**的代码 + **可安装的产物通道**（PWA + 一键构建脚本 + CI 出包）。原生二进制的真机表现需在真机/CI 实跑确认。
+因此本工程交付的是**完整、可审查、核心逻辑已通过 61 项 Node 自检验证（含原生端 + 网页端双形态闭环）**的代码 + **可安装的产物通道**（PWA + 一键构建脚本 + CI 出包）。原生二进制的真机表现需在真机/CI 实跑确认。
 
 ## 如何拿到手机端 App（三种方式）
 

@@ -10,6 +10,7 @@
     "selfcheck": "node src/tools/selfcheck.js",
     "integration-test": "node --experimental-loader ./src/tools/mock-loader.mjs src/tools/integration-test.js",
     "web-smoke": "node src/tools/web-smoke.js",
+    "sync-decoders": "node scripts/sync-decoders.mjs",
     "test": "npm run selfcheck && npm run integration-test && npm run web-smoke",
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
