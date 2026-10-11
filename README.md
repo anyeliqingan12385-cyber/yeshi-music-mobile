@@ -16,20 +16,23 @@
 | `core/identity-bridge.js` | 🆕 新增 | 移植桌面端 `core/identity_engine.js` 的**纯函数去重核心**（`norm/identityKey/softKey/quality/duplicateGroups/bestOf/analyze/annotateDuplicates`），零浏览器/Node 依赖，用于曲库语义去重标注（同歌多版本挑音质最高者保留） |
 | `main.js` / `preload.js` / `renderer` | 🔄 重做 | Electron 壳与桌面 UI 不适用，手机端用 `src/` 的响应式 Web UI 重做 |
 | `storage.js` / `database.js` | 🔄 替换 | Node/electron 专属，手机端用 Capacitor Preferences/Filesystem 替代 |
+| `web.html` / `src/web/main.js` | 🆕 新增 | **网页版入口**：用 `<input type=file webkitdirectory>` 选本地文件夹，复用与原生端**完全相同**的核心（decrypt-bridge/player/lyric-bridge/identity-bridge），**无需原生壳**即可在手机浏览器「添加到主屏幕」当 App 用 |
 
 ## 目录结构
 
 ```
 mobile/
-├── package.json          # 依赖与脚本（cap add/sync、selfcheck、build）
-├── vite.config.js        # Web 构建（允许 import 上级 core）
+├── package.json          # 依赖与脚本（cap add/sync、selfcheck、integration-test、web-smoke、build）
+├── vite.config.js        # Web 构建（允许 import 上级 core；双入口 index.html=原生端、web.html=网页版）
 ├── capacitor.config.js   # Capacitor 配置（webDir=dist）
-├── index.html
+├── index.html            # 原生端入口（Capacitor 壳加载）
+├── web.html              # 网页版入口（浏览器/直接部署，无需原生壳）
 ├── src/
-│   ├── main.js           # 入口（含 PWA Service Worker 注册）
-│   ├── app.js            # UI 编排：扫描→列表→点击解密播放→歌词同步
+│   ├── main.js           # 原生端入口（含 PWA Service Worker 注册）
+│   ├── app.js            # 原生端 UI 编排：扫描→列表→点击解密播放→歌词同步→去重标注
+│   ├── web/main.js       # 网页版 UI 编排：选文件夹→解密→播放→歌词→去重（复用同一批核心）
 │   ├── style.css         # 响应式样式（含 safe-area）
-│   ├── service-worker.js # PWA 外壳缓存（可「添加到主屏幕」安装）
+│   ├── service-worker.js # 原生端 PWA 外壳缓存
 │   ├── core/
 │   │   ├── decrypt-bridge.js  # 统一解密入口（路由 ncm/qq/普通），透传 ncm 内嵌歌词 + 标签元数据
 │   │   ├── lyric-bridge.js    # 歌词引擎移动端封装（内嵌歌词登记 + 同名 .lrc）
@@ -38,9 +41,13 @@ mobile/
 │   │   └── player.js          # HTMLAudioElement 封装，喂 Blob URL
 │   └── tools/
 │       ├── selfcheck.js       # Node 静态自检（解密 + 歌词 + 浏览器版 metadata + 去重闭环验证）
-│       └── integration-test.js# Node 端到端闭环（扫描→解密→播放URL→歌词→去重，含 Capacitor mock）
+│       ├── integration-test.js# Node 端到端闭环（扫描→解密→播放URL→歌词→去重，含 Capacitor mock）
+│       ├── web-smoke.js       # Node 网页端闭环（复用同一批核心 + MockAudio，验证网页形态可闭环）
+│       ├── mock-loader.mjs    # ESM loader：把 @capacitor/filesystem 重定向到内存 mock
+│       └── mock-capacitor-filesystem.mjs # 内存版 Capacitor Filesystem 替身
 ├── public/
 │   ├── manifest.webmanifest   # PWA 清单
+│   ├── sw.js                  # 网页版 Service Worker（缓存 App 壳，可「添加到主屏幕」）
 │   └── icons/                 # PWA 图标（由 scripts/gen-icons.mjs 生成）
 ├── scripts/
 │   ├── gen-icons.mjs          # 生成 PWA 图标（零依赖）
@@ -51,10 +58,11 @@ mobile/
 
 ## 已验证（本机可闭环）
 
-两件套自检全部通过：
+三件套自检全部通过（共 **58 项**）：
 
 - `node src/tools/selfcheck.js` —— **25 项全绿**（解密 ncm/qq、歌词引擎、浏览器版 metadata、语义去重闭环），证明手机端复用的核心正确。
 - `node --experimental-loader ./mock-loader.mjs integration-test.js` —— **19 项全绿**，用内存版 Capacitor Filesystem + MockAudio 在 Node 真实跑通**端到端**链路：扫描过滤 `.lrc` → 读字节 → 解密 → 播放器生成可播放 URL → 歌词引擎（同名 `.lrc` 优先级高于内嵌、flac 标签歌词按时间轴取行、mp3 USLT 命中）→ 语义去重识别重复组并保留音质最高版本。无需真机即可验证「能不能闭环」。
+- `node src/tools/web-smoke.js` —— **14 项全绿**，复用**与网页版 `src/web/main.js` 完全相同**的核心模块（decrypt-bridge/player/lyric-bridge/identity-bridge），用 MockAudio + URL 替身证明**网页形态**下「解密→播放 URL→歌词→去重」同样能闭环（即网页版 App 的核心逻辑正确，上手机浏览器即可用）。
 
 静态自检覆盖细项：
 
@@ -68,22 +76,30 @@ mobile/
 
 ## ⚠️ 诚实边界（本环境限制）
 
-本机是受限的 Windows 沙箱（无 Mac、无真机、模拟器起不来），**以下无法在此环境完成，需在具备条件的环境执行**：
+本机是受限的 Windows 沙箱（无 Mac、无真机、模拟器起不来；**且 `npm install` 在此沙箱被环境拦截**——只放行网络只读与少量文件写入，任何落地装包/解包都会被掐断），**以下无法在此环境完成，需在具备条件的环境执行**：
 
-1. `npm install`（Capacitor/Android SDK/Gradle 体积大，本机未实际安装）
-2. `npx cap add android/ios` 生成原生壳
-3. 真机/模拟器 build 出 APK/IPA
-4. 真机点击、真机解密验证（同桌面端 GUI 同源限制）
+1. `npm install`（本沙箱拦截写入 `node_modules`，即使纯 JS 小包也 exit 1；需在普通机器/CI 执行）
+2. `npm run build`（Vite 打包，依赖上面的 install；CI 云端已具备）
+3. `npx cap add android/ios` 生成原生壳
+4. 真机/模拟器 build 出 APK/IPA
+5. 真机点击、真机解密验证（同桌面端 GUI 同源限制）
 
-因此本工程交付的是**完整、可审查、核心逻辑已通过 21 项 Node 自检验证**的代码 + **可安装的产物通道**（PWA + 一键构建脚本 + CI 出包）。原生二进制的真机表现需在真机/CI 实跑确认。
+> 已在本沙箱**实测确认**：核心逻辑（解密/歌词/去重）全部通过 58 项 Node 自检；但 `dist/` 二进制产物与 APK 无法在此产出。网页版与原生端**源码均完整**，且网页端核心管线已用 `web-smoke` 证明可闭环——你只需在能 `npm install` 的机器（或推送 GitHub 走 CI）即可一键出包。
+
+因此本工程交付的是**完整、可审查、核心逻辑已通过 58 项 Node 自检验证（含原生端 + 网页端双形态闭环）**的代码 + **可安装的产物通道**（PWA + 一键构建脚本 + CI 出包）。原生二进制的真机表现需在真机/CI 实跑确认。
 
 ## 如何拿到手机端 App（三种方式）
 
 详见 **[BUILD.md](./BUILD.md)**，要点：
 
-- **方式 A · PWA**：`npm run build` 后部署 `dist/`，手机浏览器「添加到主屏幕」即装即用（最快，无需原生构建）。
-- **方式 B · 本地 APK**：`bash scripts/build-apk.sh`（或 `scripts\build-apk.bat`）一键产出 `app-debug.apk`，`adb install` 或侧载。
-- **方式 C · CI 出包**：push tag / 手动触发 `.github/workflows/build-android.yml`，在 Actions **Artifacts** 下载 `yeshi-music-android`（即 APK）。
+- **方式 A · 网页版（最快、无需原生构建）**：`npm run build` 后部署 `dist/web.html`（或整个 `dist/`）。手机浏览器打开 → 「添加到主屏幕」即装即用。它用 `<input type=file webkitdirectory>` 选本地文件夹，复用与原生端完全相同的核心，支持 ncm/QQ 加密格式解密播放。逻辑已通过 `web-smoke` 闭环验证。
+- **方式 B · 本地 APK**：`bash scripts/build-apk.sh`（或 `scripts\build-apk.bat`）一键产出 `app-debug.apk`，`adb install` 或侧载。前提是本机有 Node 17+ 与 Android SDK（platform-34 + build-tools）。
+- **方式 C · CI 出包（强烈推荐，零本地环境）**：本目录已 `git init` 并完成首次提交。只需：
+  ```
+  git remote add origin <你的GitHub仓库URL>
+  git push -u origin main
+  ```
+  然后在仓库 **Actions** 里手动触发 **Build Android APK** → 等 3~5 分钟 → 下载 Artifact `yeshi-music-android`（即 APK）→ 手机侧载安装。
 - **iOS**：仅 macOS + Xcode 可 `cap add ios && cap sync ios && cap open ios`。
 
 Android 10+ 受 **Scoped Storage** 限制，用户音乐通常在 `Music/`、`Download/` 或各 App 私有目录；若扫描为空，需在系统设置给「所有文件访问」权限，或在 `src/core/scan.js` 的 `DEFAULT_DIRS` 增补路径。
