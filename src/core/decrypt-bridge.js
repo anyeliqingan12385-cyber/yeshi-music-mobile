@@ -7,8 +7,7 @@
  */
 import NcmDecrypt from './decoders/ncmdecrypt.js';
 import QQDecrypt from './decoders/qqdecrypt.js';
-import * as MetadataBrowserNS from './decoders/metadata_browser.js';
-const MetadataBrowser = MetadataBrowserNS.default || MetadataBrowserNS;
+import MetadataBrowser from './decoders/metadata_browser.js';
 const { analyzeBytes } = MetadataBrowser;
 
 function getNcm() { return NcmDecrypt || (typeof window !== 'undefined' && window.NcmDecrypt); }
