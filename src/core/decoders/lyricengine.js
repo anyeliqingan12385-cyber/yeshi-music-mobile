@@ -219,6 +219,6 @@ class LyricEngine {
 }
 
 const API = { LyricEngine, SOURCES, SOURCE_ORDER };
-if (typeof module === 'object' && module.exports) module.exports = API;
-else if (typeof window !== 'undefined') window.LyricEngineMod = API;
+module.exports = API;
+if (typeof window !== 'undefined') window.LyricEngineMod = API;
 else if (typeof globalThis !== 'undefined') globalThis.LyricEngineMod = API;
