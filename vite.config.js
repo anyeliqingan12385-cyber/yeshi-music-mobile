@@ -11,6 +11,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // 让 @rollup/plugin-commonjs 也处理源码目录：默认只转 node_modules，
+    // 导致 src/core/decoders 下的普通 CJS（metadata_browser/lyricengine/lyrics）被当成 ESM、
+    // 报 "default is not exported"。UMD 文件靠 Rollup 原生识别不受影响。
+    commonjsOptions: {
+      include: [/node_modules/, /src/],
+      transformMixedEsModules: true,
+    },
     // 同时产出两个入口：index.html=原生端（Capacitor 壳加载）、web.html=网页版（浏览器/直接部署）
     rollupOptions: {
       input: {
