@@ -518,6 +518,6 @@ function analyzeBytes(input, opt) {
 }
 
 const API = { analyzeBytes, normalizeFields, parseReplayGain, classify, QUALITY_LABEL, QUALITY_RANK, parseID3v2, parseFLAC, parseMP3, parseMP4, parseOGG, parseWAV, parseAIFF, parseAPE };
-if (typeof module === 'object' && module.exports) module.exports = API;
-else if (typeof window !== 'undefined') window.MetadataBrowser = API;
+module.exports = API;
+if (typeof window !== 'undefined') window.MetadataBrowser = API;
 else if (typeof globalThis !== 'undefined') globalThis.MetadataBrowser = API;
