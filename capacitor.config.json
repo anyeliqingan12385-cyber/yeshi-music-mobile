@@ -1,0 +1,8 @@
+{
+  "appId": "com.yeshi.music",
+  "appName": "叶诗音乐",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
